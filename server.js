@@ -6,7 +6,7 @@ const req = require('request');
 const axios = require('axios');
 
 var port = process.env.PORT || 8081;   
-//var spsfServiceUrl = 'https://spsfservice.mybluemix.net';
+//var spsfServiceUrl = 'https://spsfservice.us-south.cf.appdomain.cloud';
 var spsfServiceUrl = 'http://localhost:8080';
 
 app.use(express.static(__dirname +'/public'));
