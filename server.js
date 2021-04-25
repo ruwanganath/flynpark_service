@@ -5,8 +5,8 @@ const req = require('request');
 const axios = require('axios');
 
 var port = process.env.PORT || 8081;   
-//var spsfServiceUrl = 'https://spsfservice.mybluemix.net';
-var spsfServiceUrl = 'http://localhost:8080';
+var spsfServiceUrl = 'https://spsfservice.us-south.cf.appdomain.cloud';
+//var spsfServiceUrl = 'http://localhost:8080';
 
 app.use(express.static(__dirname +'/public'));
 //use express boady parser to get view data
@@ -18,6 +18,7 @@ var arrayOffstreetData=[];
 var arrayOnstreetInfoData=[];
 var arrayObject;
 
+//convert json to an array
 convertJsonToArray = function (json){
     var arrayOutput = [];
     var keys = Object.keys(json);
@@ -27,6 +28,7 @@ convertJsonToArray = function (json){
     return arrayOutput;
 }
 
+//get available on and off street parking data from the open data platform
 app.get('/generateParkingData',function (request,response){
     //lat,lon,occupancy
     reqObject = "https://data.melbourne.vic.gov.au/resource/vh2v-4nfs.json";
