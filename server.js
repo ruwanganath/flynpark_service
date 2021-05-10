@@ -1,4 +1,3 @@
-const { json } = require('express');
 var express = require('express');
 app = express();
 
@@ -6,19 +5,23 @@ const req = require('request');
 const axios = require('axios');
 
 var port = process.env.PORT || 8081;   
+
+//depending on the application run on locally or live we change the app host url here
 //var spsfServiceUrl = 'https://spsfservice.mybluemix.net';
 var spsfServiceUrl = 'http://localhost:8080';
+
+//open data platform endpoint url for bay sensor data
+var urlOnstreetBaySensorData = "https://data.melbourne.vic.gov.au/resource/vh2v-4nfs.json";
+//open data platform endpoint url for bay info data
+var urlOnstreetBayInfoData = "https://data.melbourne.vic.gov.au/resource/ntht-5rk7.json";
+//open data platform endpoint url for off street parking data
+var urlOffstreetParkingData = "https://data.melbourne.vic.gov.au/resource/krh5-hhjn.json";
 
 app.use(express.static(__dirname +'/public'));
 //use express boady parser to get view data
 app.use(express.urlencoded({ extended: true }));
 
-var arrayData=[]; 
-var arrayOnstreetData=[];
-var arrayOffstreetData=[];
-var arrayOnstreetInfoData=[];
-var arrayObject;
-
+//function to convert json to an array
 convertJsonToArray = function (json){
     var arrayOutput = [];
     var keys = Object.keys(json);
@@ -28,73 +31,111 @@ convertJsonToArray = function (json){
     return arrayOutput;
 }
 
-app.get('/generateParkingData',function (request,response){
-    //lat,lon,occupancy
-    reqObject = "https://data.melbourne.vic.gov.au/resource/vh2v-4nfs.json";
-    reqObject2 = "https://data.melbourne.vic.gov.au/resource/ntht-5rk7.json";
-    req(reqObject,(err,result,body)=> {
-        
-        if(err){
-            return console.log(err);
-        }
-        data = JSON.parse(result.body)
-        arrayOnstreetData = convertJsonToArray(data)    
-        
-        req(reqObject2,(err,result,body)=> {
-            if(err){
-                return console.log(err);
-            }
-            data2 = JSON.parse(result.body)
-            arrayOnstreetInfoData = convertJsonToArray(data2)
-         })
-       
-        arrayOnstreetData.forEach((element) => { 
-            if(element.status==='Unoccupied'){
-                
-                arrayOnstreetInfoData.forEach((element2) => { 
-                    if(element.bay_id === element2.bayid){
-                        arrayObject = {
-                            "type":'on',
-                            "bay": element.bay_id,
-                            "lat": element.lat,
-                            "lon": element.lon,
-                            "desc1":element2.description1,
-                            "desc2":element2.description2
-                        }   
-                        arrayData.push(arrayObject);  
-                    }
-                })     
-            }
-        })
-        
-    });
+//function to get onstreet parking data and relavant parking bay info data
+getOnstreetParkingData = async function(){
+    
+    let arrayOnstreetParkingData=[];
+    let arrayOnstreetSensorData =[];
+    let arrayOnstreetInfoData =[];
 
-    reqObject = "https://data.melbourne.vic.gov.au/resource/krh5-hhjn.json";
-    req(reqObject,(err,result,body)=> {
-        if(err){
-            return console.log(err);
+    try {
+        //get sensor data from the end point
+        const jsonSensorData = await axios.get(urlOnstreetBaySensorData);  
+        arrayOnstreetSensorData = convertJsonToArray(jsonSensorData.data)
+        
+        try {
+            //get parking info data from the end point
+            const jsonInfoData = await axios.get(urlOnstreetBayInfoData);      
+            arrayOnstreetInfoData = convertJsonToArray(jsonInfoData.data)
+
+            arrayOnstreetSensorData.forEach((element) => { 
+
+                if(element.status==='Unoccupied'){
+                    
+                    arrayOnstreetInfoData.forEach((element1) => { 
+
+                        if(element.bay_id === element1.bayid){
+                            arrayObject = {
+                                "type":'on',
+                                "bay": element.bay_id,
+                                "lat": element.lat,
+                                "lon": element.lon,
+                                "desc1":element1.description1,
+                                "desc2":element1.description2
+                            }   
+                            //constructing available onstreet parking data array
+                            arrayOnstreetParkingData.push(arrayObject);  
+                        }
+                    })     
+                }
+            })    
+    
+        } catch (error) {
+        console.error(error);
         }
 
-        data = JSON.parse(result.body)
-        arrayOffstreetData = convertJsonToArray(data)   
+    } catch (error) {
+    console.error(error);
+    }
 
-        arrayOffstreetData.forEach((element) => {              
-            if(element.parking_type==='Commercial'){
+    //return onstreet parking data array
+    return arrayOnstreetParkingData;
+}
 
-                arrayObject = {
+//function to get offstreet parking data 
+getOffstreetParkingData = async function(){
+    
+    let arrayOffstreetParkingData=[];
+    let arrayTemp=[];
+
+    try {
+        //get offstreet parking data from the end point
+        const jsonOffstreetData = await axios.get(urlOffstreetParkingData);       
+        arrayTemp = convertJsonToArray(jsonOffstreetData,data)
+
+        arrayTemp.forEach((elementOffstreetData) => {              
+            if(elementOffstreetData.parking_type==='Commercial'){
+
+                let arrayObject = {
                     "type":'off',
-                    "bay": element.base_property_id,
-                    "lat": element.y_coordinate,
-                    "lon": element.x_coordinate_2,
-                    "desc1":element.parking_spaces,
+                    "bay": elementOffstreetData.base_property_id,
+                    "lat": elementOffstreetData.y_coordinate,
+                    "lon": elementOffstreetData.x_coordinate_2,
+                    "desc1":elementOffstreetData.parking_spaces,
                     "desc2":""
                 }   
-                arrayData.push(arrayObject); 
+                //constructing off street parking data array
+                arrayOffstreetParkingData.push(arrayObject); 
             }
-        })         
-    });
+        })   
 
-    response.json(arrayData)
+    } catch (error) {
+    console.error(error);
+    }
+
+    //return offstreet parking data array
+    return arrayOffstreetParkingData;
+}
+
+
+//function to generate all onstreet and off street parking data array and return all available parking data 
+app.get('/generateParkingData',function (request,response){
+   
+    let arrayAllParkingData = [];
+   
+    return getOnstreetParkingData().then((res) => {
+
+        res.forEach((element) => { 
+            arrayAllParkingData.push(element)
+        })
+
+        return getOffstreetParkingData().then((res) => {
+            res.forEach((element) => { 
+                arrayAllParkingData.push(element)
+            }) 
+            response.json(arrayAllParkingData)
+        })
+    })  
  })
 
 app.listen(port);
