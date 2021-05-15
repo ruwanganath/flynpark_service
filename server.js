@@ -91,7 +91,7 @@ getOffstreetParkingData = async function(){
     try {
         //get offstreet parking data from the end point
         const jsonOffstreetData = await axios.get(urlOffstreetParkingData);       
-        arrayTemp = convertJsonToArray(jsonOffstreetData,data)
+        arrayTemp = convertJsonToArray(jsonOffstreetData.data)
 
         arrayTemp.forEach((elementOffstreetData) => {              
             if(elementOffstreetData.parking_type==='Commercial'){
@@ -133,7 +133,7 @@ app.get('/generateParkingData',function (request,response){
             res.forEach((element) => { 
                 arrayAllParkingData.push(element)
             }) 
-            response.json(arrayAllParkingData)
+            response.send(arrayAllParkingData)
         })
     })  
  })
