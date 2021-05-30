@@ -4,9 +4,9 @@ app = express();
 const req = require('request');
 const axios = require('axios');
 
-var port = process.env.PORT || 8081;   
-var spsfServiceUrl = 'https://spsfservice.us-south.cf.appdomain.cloud';
-//var spsfServiceUrl = 'http://localhost:8080';
+var port = process.env.PORT || 8000;   
+//var spsfServiceUrl = 'https://spsfservice.us-south.cf.appdomain.cloud';
+var spsfServiceUrl = 'http://localhost:8080';
 
 //depending on the application run on locally or live we change the app host url here
 //var spsfServiceUrl = 'https://spsfservice.mybluemix.net';
@@ -23,10 +23,6 @@ app.use(express.static(__dirname +'/public'));
 //use express boady parser to get view data
 app.use(express.urlencoded({ extended: true }));
 
-var arrayData=[]; 
-var arrayOnstreetData=[];
-var arrayOffstreetData=[];
-var arrayOnstreetInfoData=[];
 var arrayObject;
 
 //convert json to an array
