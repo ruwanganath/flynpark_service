@@ -9,8 +9,8 @@ var port = process.env.PORT || 8000;
 var spsfServiceUrl = 'http://localhost:8080';
 
 //depending on the application run on locally or live we change the app host url here
-//var spsfServiceUrl = 'https://spsfservice.mybluemix.net';
-var spsfServiceUrl = 'http://localhost:8080';
+var spsfServiceUrl = 'https://spsfservice.mybluemix.net';
+//var spsfServiceUrl = 'http://localhost:8080';
 
 //open data platform endpoint url for bay sensor data
 var urlOnstreetBaySensorData = "https://data.melbourne.vic.gov.au/resource/vh2v-4nfs.json";
